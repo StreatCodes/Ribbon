@@ -1,0 +1,6 @@
+fn sayHello(phrase: string): void {
+    print(phrase + " world!")
+}
+
+let phrase = "Hello"
+sayHello(phrase)
