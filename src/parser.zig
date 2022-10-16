@@ -1,6 +1,6 @@
 const std = @import("std");
 
-const TokenKind = enum {
+pub const TokenKind = enum {
     Start,
     KeyWord,
     BuiltInType,
@@ -45,7 +45,7 @@ fn isWhiteSpace(c: u8) bool {
     return false;
 }
 
-const Token = struct {
+pub const Token = struct {
     kind: TokenKind,
     start: usize,
     end: usize,
@@ -171,5 +171,5 @@ pub fn parse(allocator: std.mem.Allocator, text: []u8) ![]Token {
         start = token.end + 1;
     }
 
-    return tokens.items;
+    return tokens.toOwnedSlice();
 }

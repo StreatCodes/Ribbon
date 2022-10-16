@@ -1,5 +1,7 @@
 const std = @import("std");
 const parser = @import("parser.zig");
+// const ast = @import("ast.zig");
+const AST = @import("ast.zig").AST;
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
@@ -20,4 +22,8 @@ pub fn main() !void {
     for (tokens) |t| {
         std.debug.print("{any}: {c}\n", .{ t.kind, file_text[t.start .. t.end + 1] });
     }
+
+    var ast = AST.init(allocator, file_text, tokens);
+    _ = try ast.generateModule();
+    ast.deinit();
 }

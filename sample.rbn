@@ -2,5 +2,7 @@ fn sayHello(phrase: string): void {
     print(phrase + " world!")
 }
 
-let phrase = "Hello"
-sayHello(phrase)
+fn main(): void {
+    let phrase = "Hello"
+    sayHello(phrase)
+}
