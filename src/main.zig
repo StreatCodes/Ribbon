@@ -17,13 +17,18 @@ pub fn main() !void {
     const file_text = try std.fs.cwd().readFileAlloc(allocator, path, 10000 * 1024); // 10MB
     defer allocator.free(file_text);
 
-    var tokens = try parser.parse(allocator, file_text);
-    defer allocator.free(tokens);
-    for (tokens) |t| {
+    var tokenIter = try parser.parse(allocator, file_text);
+    defer tokenIter.deinit(allocator);
+    while (tokenIter.next()) |t| {
         std.debug.print("{any}: {c}\n", .{ t.kind, file_text[t.start .. t.end + 1] });
     }
+    tokenIter.reset();
 
-    var ast = AST.init(allocator, file_text, tokens);
+    var ast = AST.init(allocator, file_text, &tokenIter);
+    defer ast.deinit();
+
+    // _ = ast.generateModule() catch |err| {
+    //     std.debug.print("Error {any} - \"{s}\"", .{ err, tokenIter.current().value(file_text) });
+    // };
     _ = try ast.generateModule();
-    ast.deinit();
 }

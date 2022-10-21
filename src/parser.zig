@@ -49,6 +49,10 @@ pub const Token = struct {
     kind: TokenKind,
     start: usize,
     end: usize,
+
+    pub fn value(self: *const Token, text: []u8) []u8 {
+        return text[self.start .. self.end + 1];
+    }
 };
 
 fn nextToken(text: []u8, start: usize) Token {
@@ -160,16 +164,75 @@ fn nextToken(text: []u8, start: usize) Token {
     return Token{ .kind = current, .start = start, .end = i };
 }
 
-pub fn parse(allocator: std.mem.Allocator, text: []u8) ![]Token {
+const ParseError = error{
+    UnexpectedToken,
+};
+
+pub const TokenIterator = struct {
+    tokens: []Token,
+    index: usize = 0,
+
+    pub fn deinit(self: *TokenIterator, allocator: std.mem.Allocator) void {
+        allocator.free(self.tokens);
+    }
+
+    pub fn reset(self: *TokenIterator) void {
+        self.index = 0;
+    }
+
+    pub fn current(self: *TokenIterator) Token {
+        return self.tokens[self.index];
+    }
+
+    pub fn next(self: *TokenIterator) ?Token {
+        const nextIndex = self.index + 1;
+        if (nextIndex < self.tokens.len) {
+            self.index = nextIndex;
+            return self.tokens[nextIndex];
+        }
+        return null;
+    }
+
+    pub fn peek(self: *TokenIterator) ?Token {
+        const nextIndex = self.index + 1;
+        if (nextIndex < self.tokens.len) {
+            return self.tokens[nextIndex];
+        }
+        return null;
+    }
+    
+    pub fn peekAt(self: *TokenIterator, count: usize) ?Token {
+        const peekIndex = self.index + count;
+        if (peekIndex < self.tokens.len) {
+            return self.tokens[peekIndex];
+        }
+        return null;
+    }
+
+    pub fn consume(self: *TokenIterator, kind: TokenKind) !void {
+        const nextT = self.peek() orelse return ParseError.UnexpectedToken;
+
+        if (nextT.kind != kind) {
+            return ParseError.UnexpectedToken;
+        }
+        self.index += 1;
+    }
+};
+
+pub fn parse(allocator: std.mem.Allocator, text: []u8) !TokenIterator {
     var start: usize = 0;
 
     var tokens = std.ArrayList(Token).init(allocator);
 
     while (start < text.len) {
         var token = nextToken(text, start);
-        try tokens.append(token);
+
+        //ignore whitespace tokens
+        if (token.kind != TokenKind.WhiteSpace) {
+            try tokens.append(token);
+        }
         start = token.end + 1;
     }
 
-    return tokens.toOwnedSlice();
+    return .{ .tokens = tokens.toOwnedSlice() };
 }
